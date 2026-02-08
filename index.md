@@ -32,33 +32,33 @@ By the end of this lab, you will have built:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    HOST MACHINE (Ubuntu)                 │
-│                                                          │
-│  ┌────────────────┐              ┌────────────────┐    │
-│  │  Container 1   │              │  Container 2   │    │
-│  │                │              │                │    │
-│  │  Node.js App   │◄────────────►│  Nginx Proxy   │    │
-│  │  Port: 3000    │   veth pair  │  Port: 80      │    │
-│  │                │              │                │    │
-│  │  • PID NS      │              │  • PID NS      │    │
-│  │  • NET NS      │              │  • NET NS      │    │
-│  │  • MNT NS      │              │  • MNT NS      │    │
-│  │  • UTS NS      │              │  • UTS NS      │    │
-│  │  • cgroups     │              │  • cgroups     │    │
-│  └────────────────┘              └────────────────┘    │
+│                    HOST MACHINE (Ubuntu)                │
+│                                                         │
+│  ┌────────────────┐              ┌────────────────┐     │
+│  │  Container 1   │              │  Container 2   │     │
+│  │                │              │                │     │
+│  │  Node.js App   │◄────────────►│  Nginx Proxy   │     │ 
+│  │  Port: 3000    │   veth pair  │  Port: 80      │     │
+│  │                │              │                │     │
+│  │  • PID NS      │              │  • PID NS      │     │
+│  │  • NET NS      │              │  • NET NS      │     │
+│  │  • MNT NS      │              │  • MNT NS      │     │
+│  │  • UTS NS      │              │  • UTS NS      │     │
+│  │  • cgroups     │              │  • cgroups     │     │
+│  └────────────────┘              └────────────────┘     │
 │         │                                │              │
 │         └────────┬───────────────────────┘              │
-│                  │                                       │
+│                  │                                      │
 │           ┌──────▼──────┐                               │
 │           │  mybr0      │ (Our custom bridge)           │
 │           │  10.0.0.1   │                               │
 │           └─────────────┘                               │
-│                  │                                       │
+│                  │                                      │
 │           ┌──────▼──────┐                               │
 │           │  iptables   │ (NAT rules)                   │
 │           └─────────────┘                               │
-│                  │                                       │
-│              Internet                                    │
+│                  │                                      │
+│              Internet                                   │
 └─────────────────────────────────────────────────────────┘
 ```
 
