@@ -1,11 +1,5 @@
 # Building Your Own Container Runtime from Scratch
 ## A Complete Hands-On Lab to Understand Docker Internals
-
-**Author:** Your 30+ Year Linux Admin Guide  
-**Target Audience:** Teachers, Students, Engineers who want to understand containers deeply  
-**Hardware Required:** Ubuntu 22.04/24.04, 8GB RAM, 2 vCPU (you're good!)  
-**Time Required:** 3-4 hours for complete walkthrough  
-
 ---
 
 ## Table of Contents
