@@ -182,23 +182,34 @@ exit
 ip addr show
 # You'll see eth0, lo, etc.
 
-# Create a new network namespace
-sudo ip netns add demo-ns
+# Create two new network namespace
+ip netns add demo-ns1
+ip netns add demo-ns2
 
 # List network namespaces
 ip netns list
-# Shows: demo-ns
 
-# Execute command inside the namespace
-sudo ip netns exec demo-ns ip addr show
-# ONLY shows 'lo' (loopback) - no other interfaces!
+# go inside
+ip netns exec demo-ns bash
 
-# Compare with host
-ip addr show
-# Shows all interfaces
+create the veth-cable
+ip link add veth-ns1 type veth peer name veth-ns2
 
-# Cleanup
-sudo ip netns del demo-ns
+Assigning ips
+ip addr add 10.10.0.1/24 dev veth-ns1
+ip addr add 10.10.0.2/24 dev veth-ns2
+
+bring interface up
+ip link set veth-ns1 up
+ip link set veth-ns2 up
+
+# ping from ns1 to ns2
+ping 10.10.0.2 from 10.10.0.1
+
+moving the ends.
+sudo ip link set veth-ns1 netns ns1
+sudo ip link set veth-ns2 netns ns2
+
 ```
 
 **Teaching Point:** This is why containers have their own IP addresses!
@@ -1081,3 +1092,262 @@ echo "Lab cleanup complete!"
 **Created by:** A Linux Admin with 30+ years battle scars  
 **License:** Do whatever you want - teach freely!  
 **Feedback:** May your containers be lightweight and your kernels panic-free! 🐧
+
+Gtp suggestoin edits:
+# Building Your Own Container Runtime from Scratch
+
+> **Hands‑On Lab to Understand Docker Internals (Educational Project)**
+
+⚠️ **Important Disclaimer**
+
+This project is **for learning and experimentation only**. It intentionally exposes low‑level Linux primitives (namespaces, cgroups, chroot, iptables) without the safety, hardening, and guardrails provided by real container runtimes.
+
+**Do NOT use this in production.**
+
+---
+
+## 📌 What This Project Is
+
+This repository walks you through building a **minimal container runtime** using:
+
+* Linux namespaces (PID, NET, MNT, UTS, IPC)
+* cgroups v2 for resource control
+* `chroot` for filesystem isolation
+* Linux bridges, veth pairs, and iptables for networking
+
+By the end, you will run:
+
+* A Node.js application container
+* An Nginx reverse‑proxy container
+* Both connected via a custom Linux bridge
+
+This project exists to answer one question:
+
+> **What is Docker *actually* doing under the hood?**
+
+---
+
+## 🚫 What This Project Is NOT
+
+This is **not**:
+
+* A secure container runtime
+* A Docker replacement
+* OCI‑compliant
+* Hardened against container escape
+* Safe for multi‑tenant environments
+
+Missing by design:
+
+* USER namespaces
+* Capability dropping
+* seccomp / AppArmor / SELinux
+* OverlayFS image layering
+* Init process (PID 1 signal handling)
+* Race‑free lifecycle management
+
+These omissions are intentional so you can **see the raw mechanics clearly**.
+
+---
+
+## 🧠 Learning Objectives
+
+After completing the lab, you will understand:
+
+* How containers are **just isolated processes**
+* How Linux namespaces partition kernel views
+* How cgroups enforce CPU, memory, and PID limits
+* How container networking works (bridge + veth + NAT)
+* Why Docker is mostly **automation and policy**, not magic
+
+---
+
+## 🧩 Architecture Overview
+
+```
+Host Linux Kernel
+│
+├─ Namespace‑isolated Process (Container)
+│   ├─ PID namespace
+│   ├─ Network namespace
+│   ├─ Mount namespace
+│   ├─ UTS namespace
+│   └─ cgroup limits
+│
+├─ Linux Bridge (mybr0)
+│   ├─ veth pairs
+│   └─ iptables NAT
+│
+└─ Internet
+```
+
+---
+
+## 🛠️ Prerequisites
+
+### Supported OS
+
+* Ubuntu 22.04 or 24.04
+* Linux kernel 5.x or newer
+
+### Required Privileges
+
+* `sudo` access (root required)
+
+### Required Packages
+
+```
+sudo apt update
+sudo apt install -y \
+  debootstrap \
+  iproute2 \
+  iptables \
+  bridge-utils \
+  net-tools \
+  curl \
+  htop
+```
+
+---
+
+## 📁 Repository Layout
+
+```
+container-lab/
+├── rootfs/        # Base Ubuntu filesystem (debootstrap)
+├── containers/    # Runtime container instances
+├── scripts/       # Container runtime scripts
+├── logs/          # Container logs
+└── README.md
+```
+
+---
+
+## 🚀 Quick Start
+
+```bash
+mkdir -p ~/container-lab
+cd ~/container-lab
+```
+
+Follow the lab in order:
+
+1. Namespaces
+2. cgroups v2
+3. Filesystem isolation
+4. Container networking
+5. Runtime script
+6. Node.js container
+7. Nginx container
+
+Each section builds on the previous one.
+
+---
+
+## 🔐 Security Warning (Read This)
+
+This lab:
+
+* Runs containers as **root on the host kernel**
+* Does **not** isolate users
+* Does **not** drop Linux capabilities
+* Does **not** apply syscall filters
+
+A compromised container == a compromised host.
+
+This is acceptable **only** for controlled learning environments.
+
+---
+
+## 🧪 Why chroot Is Used (and Why Docker Doesn’t)
+
+`chroot` is used here for simplicity.
+
+Important facts:
+
+* `chroot` is **not a security boundary**
+* Docker uses OverlayFS for copy‑on‑write layers
+* Real runtimes combine namespaces + mounts + LSMs
+
+We intentionally keep this primitive to expose mechanics.
+
+---
+
+## 🧠 Key Concepts Reinforced
+
+### Containers vs VMs
+
+| Containers        | Virtual Machines   |
+| ----------------- | ------------------ |
+| Share host kernel | Own kernel         |
+| Fast startup      | Slow boot          |
+| Process isolation | Hardware isolation |
+
+---
+
+### Namespaces Used
+
+* PID — process isolation
+* NET — networking stack isolation
+* MNT — filesystem mounts
+* UTS — hostname isolation
+* IPC — shared memory & semaphores
+
+(USER namespace is intentionally omitted.)
+
+---
+
+### cgroups v2 Controllers
+
+* `cpu.max`
+* `memory.max`
+* `pids.max`
+
+These map directly to Docker flags like `--cpus`, `--memory`, and `--pids-limit`.
+
+---
+
+## 🧹 Cleanup
+
+When finished:
+
+```bash
+sudo iptables -t nat -F
+sudo iptables -F
+sudo ip link del mybr0
+sudo rm -rf ~/container-lab/containers
+```
+
+(Optional) remove root filesystem:
+
+```bash
+sudo rm -rf ~/container-lab/rootfs
+```
+
+---
+
+## 📚 Recommended Next Steps
+
+After completing this lab, explore:
+
+* USER namespaces
+* OverlayFS
+* seccomp profiles
+* `tini` and PID 1 behavior
+* OCI runtime specification
+* containerd + runc source code
+
+---
+
+## 🧾 License
+
+MIT‑style. Teach it, fork it, break it, rebuild it.
+
+---
+
+## ✍️ Author
+
+Built by a Linux administrator with decades of production, kernel‑adjacent, and DevOps battle scars.
+
+If this made containers finally *click* — mission accomplished. 🐧
+
