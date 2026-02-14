@@ -94,17 +94,15 @@ ls -la /proc/self/ns/
 sudo apt update
 
 # Install essential tools
+sudo apt update
 sudo apt install -y \
-    debootstrap \
-    bridge-utils \
-    iproute2 \
-    iptables \
-    net-tools \
-    curl \
-    tree \
-    htop \
-    cgroup-tools \
-    libcgroup-dev
+  debootstrap \
+  bridge-utils \
+  iproute2 \
+  iptables \
+  net-tools \
+  curl \
+  htop
 
 # Verify installations
 which unshare   # Should show /usr/bin/unshare
